@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Sahil AI Widget</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+#aiwRoot, #aiwRoot *{box-sizing:border-box;}
+#aiwBubble{
+  position:fixed;bottom:20px;right:20px;width:58px;height:58px;border-radius:50%;
+  background:linear-gradient(155deg,#3d6b4f,#20381f);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;box-shadow:0 6px 20px rgba(20,40,25,.35);z-index:999999;transition:transform .2s;
+}
+#aiwBubble:hover{transform:scale(1.07) rotate(-4deg);}
+#aiwBadge{
+  position:absolute;top:-4px;right:-4px;background:#e8a33d;color:#241500;
+  font:700 11px 'Inter',sans-serif;min-width:20px;height:20px;border-radius:10px;
+  display:none;align-items:center;justify-content:center;padding:0 5px;box-shadow:0 2px 6px rgba(0,0,0,.25);
+}
+#aiwWindow{
+  position:fixed;z-index:999999;bottom:20px;right:20px;
+  width:400px;max-width:94vw;height:600px;max-height:88vh;
+  background:#fffdf8;border-radius:18px;overflow:hidden;display:none;flex-direction:column;
+  box-shadow:0 20px 60px rgba(20,30,20,.32);font-family:'Inter',-apple-system,sans-serif;
+  border:1px solid #e4dcc8;
+}
+@media (max-width:680px){
+  #aiwWindow{
+    top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;height:100dvh;
+    max-width:100vw;max-height:100vh;max-height:100dvh;border-radius:0;border:none;
+  }
+}
+#aiwHeader{background:linear-gradient(120deg,#16241c,#2b4d38);color:#faf6ec;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.aiw-title{display:flex;align-items:center;gap:8px;font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:600;}
+#aiwClose{background:none;border:none;color:#faf6ec;font-size:20px;cursor:pointer;opacity:.7;line-height:1;}
+#aiwClose:hover{opacity:1;}
+#aiwTabs{display:none;background:#f0ead9;border-bottom:1px solid #e4dcc8;flex-shrink:0;}
+.aiw-tabbtn{flex:1;background:none;border:none;padding:9px 3px;font-size:10.5px;font-weight:700;color:#7a7263;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;font-family:inherit;}
+.aiw-tabbtn.active{color:#2b4d38;border-bottom-color:#8fd14f;}
+.aiw-tabpanel{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;}
+#aiwMessages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;}
+.aiw-msg{max-width:82%;padding:9px 13px;border-radius:14px;font-size:13.5px;line-height:1.45;word-wrap:break-word;}
+.aiw-msg-user{align-self:flex-end;background:#3d6b4f;color:#fff;border-bottom-right-radius:4px;}
+.aiw-msg-ai{align-self:flex-start;background:#f0ead9;color:#26281f;border-bottom-left-radius:4px;}
+.aiw-taughttag{opacity:.75;font-size:11px;}
+.aiw-chips{display:flex;gap:6px;padding:0 14px 8px;flex-wrap:wrap;flex-shrink:0;}
+.aiw-chip{background:#faf1de;border:1px solid #e8d9b8;color:#7a5a20;border-radius:14px;padding:5px 11px;font-size:11.5px;cursor:pointer;font-family:inherit;}
+.aiw-chip:hover{background:#f5e6c4;}
+.aiw-inputrow{display:flex;gap:8px;padding:10px 12px;border-top:1px solid #e4dcc8;background:#fffdf8;flex-shrink:0;}
+#aiwInput{flex:1;border:1px solid #ddd3ba;border-radius:20px;padding:9px 14px;font-size:13px;font-family:inherit;outline:none;min-width:0;}
+#aiwInput:focus{border-color:#8fd14f;}
+#aiwSend{width:36px;height:36px;border-radius:50%;background:#3d6b4f;color:#fff;border:none;cursor:pointer;font-size:15px;flex-shrink:0;}
+#aiwSend:hover{background:#2b4d38;}
+.aiw-panel-inner{padding:12px 14px;overflow-y:auto;flex:1;min-height:0;}
+.aiw-field-label{font-size:10.5px;font-weight:700;color:#5a6b5a;margin:8px 0 4px;text-transform:uppercase;letter-spacing:.4px;}
+.aiw-input,.aiw-select{width:100%;border:1px solid #ddd3ba;border-radius:8px;padding:9px 10px;font-size:13px;font-family:inherit;margin-bottom:8px;}
+.aiw-input:focus,.aiw-select:focus{outline:none;border-color:#8fd14f;}
+.aiw-textarea{width:100%;border:1px solid #ddd3ba;border-radius:8px;padding:9px 10px;font-size:13px;font-family:inherit;margin-bottom:8px;resize:vertical;min-height:90px;line-height:1.5;}
+.aiw-textarea:focus{outline:none;border-color:#8fd14f;}
+.aiw-btn{background:#3d6b4f;color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer;width:100%;font-family:inherit;margin-bottom:8px;}
+.aiw-btn:hover{background:#2b4d38;}
+.aiw-btn-amber{background:#e8a33d;color:#2b1c00;}
+.aiw-btn-amber:hover{background:#d1912f;}
+.aiw-btn-danger{background:#c0503a;color:#fff;}
+.aiw-btn-danger:hover{background:#a4402c;}
+.aiw-qarow,.aiw-classrow{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;background:#f7f3e8;border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px;}
+.aiw-qapattern{font-weight:700;color:#2b4d38;}
+.aiw-qaresponse{color:#544;margin-top:2px;}
+.aiw-qadel{background:#e8d9c0;border:none;color:#8a3020;width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:13px;flex-shrink:0;}
+.aiw-empty{color:#998;font-size:12px;text-align:center;padding:18px 10px;}
+#aiwWebcam{width:100%;border-radius:8px;display:none;margin-bottom:8px;background:#000;}
+#aiwPreviewWrap{display:none;margin-bottom:8px;text-align:center;}
+#aiwPreview,#aiwTestPreview{max-width:100%;max-height:110px;border-radius:8px;display:none;margin:0 auto;}
+#aiwPredictionResult{margin-top:8px;font-size:13px;font-weight:700;color:#2b4d38;text-align:center;min-height:18px;}
+.aiw-hr{border:none;border-top:1px solid #e4dcc8;margin:10px 0;}
+.aiw-camrow{display:flex;gap:8px;margin-bottom:8px;}
+.aiw-camrow .aiw-btn{flex:1;margin-bottom:0;display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer;}
+.aiw-filelabel{display:block;text-align:center;cursor:pointer;}
+</style>
+</head>
+<body>
+<div id="aiwRoot">
+
+<div id="aiwBubble" title="AI se baat karo">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <path d="M12 21 V10" stroke="#faf6ec" stroke-width="2" stroke-linecap="round"/>
+    <path d="M12 10 C7.5 10 5.5 6.8 5.5 3.2 C10.3 3.2 12.2 6 12.2 10 Z" fill="#8fd14f"/>
+    <path d="M12.3 12.4 C17 12.2 19 8.8 18.7 5.2 C13.9 5.4 12 8.4 12.3 12.4 Z" fill="#faf6ec"/>
+  </svg>
+  <span id="aiwBadge">0</span>
+</div>
+
+<div id="aiwWindow">
+  <div id="aiwHeader">
+    <div class="aiw-title">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+        <path d="M12 21 V10" stroke="#8fd14f" stroke-width="2" stroke-linecap="round"/>
+        <path d="M12 10 C7.5 10 5.5 6.8 5.5 3.2 C10.3 3.2 12.2 6 12.2 10 Z" fill="#8fd14f"/>
+        <path d="M12.3 12.4 C17 12.2 19 8.8 18.7 5.2 C13.9 5.4 12 8.4 12.3 12.4 Z" fill="#faf6ec"/>
+      </svg>
+      <span>Sahil AI</span>
+    </div>
+    <button id="aiwClose">×</button>
+  </div>
+
+  <div id="aiwTabs">
+    <button class="aiw-tabbtn active" data-tab="chat">💬 Chat</button>
+    <button class="aiw-tabbtn" data-tab="teachText">🔒 Teach</button>
+    <button class="aiw-tabbtn" data-tab="teachImage">🔒 Images</button>
+    <button class="aiw-tabbtn" data-tab="settings">🔒⚙️</button>
+  </div>
+
+  <div id="aiwChatTab" class="aiw-tabpanel" style="display:flex;">
+    <div id="aiwMessages"></div>
+    <div class="aiw-chips" id="aiwChips"></div>
+    <div class="aiw-inputrow">
+      <input id="aiwInput" placeholder="Kuch poocho..." autocomplete="off"/>
+      <button id="aiwSend">➤</button>
+    </div>
+  </div>
+
+  <div id="aiwTeachTextTab" class="aiw-tabpanel" style="display:none;">
+    <div class="aiw-panel-inner">
+      <div class="aiw-field-label">Jaankari / Instructions likho (ek line = ek baat)</div>
+      <textarea id="aiwInfoInput" class="aiw-textarea" placeholder="jaise:&#10;Mera naam Sahil hai, main is website ka banda hoon&#10;Hum web development aur games banate hain&#10;Contact ke liye email kare sahil@example.com"></textarea>
+      <button id="aiwAddInfo" class="aiw-btn aiw-btn-amber">🌱 Sikhao</button>
+      <hr class="aiw-hr"/>
+      <div class="aiw-field-label">Trained Jaankari</div>
+      <div id="aiwQaList"></div>
+    </div>
+  </div>
+
+  <div id="aiwTeachImageTab" class="aiw-tabpanel" style="display:none;">
+    <div class="aiw-panel-inner">
+      <div class="aiw-field-label">Naya image sikhao</div>
+      <input id="aiwLabelInput" class="aiw-input" placeholder="Label (jaise: cat, dog)"/>
+      <video id="aiwWebcam" autoplay playsinline muted></video>
+      <div class="aiw-camrow">
+        <button id="aiwStartCam" class="aiw-btn">📷 Camera</button>
+        <button id="aiwCaptureBtn" class="aiw-btn aiw-btn-amber" style="display:none;">📸 Capture</button>
+        <label class="aiw-btn aiw-filelabel">📁 Upload
+          <input type="file" id="aiwImgUpload" accept="image/*" style="display:none;"/>
+        </label>
+      </div>
+      <div id="aiwPreviewWrap"><img id="aiwPreview"/></div>
+      <button id="aiwAddImageBtn" class="aiw-btn">🌱 Is Image ko Sikhao</button>
+      <hr class="aiw-hr"/>
+      <div class="aiw-field-label">Trained Classes</div>
+      <div id="aiwClassList"></div>
+      <hr class="aiw-hr"/>
+      <div class="aiw-field-label">Test: Pehchano</div>
+      <label class="aiw-btn aiw-filelabel">📁 Test Image Upload Karo
+        <input type="file" id="aiwTestImgUpload" accept="image/*" style="display:none;"/>
+      </label>
+      <div style="text-align:center;"><img id="aiwTestPreview"/></div>
+      <div id="aiwPredictionResult"></div>
+    </div>
+  </div>
+
+  <div id="aiwSettingsTab" class="aiw-tabpanel" style="display:none;">
+    <div class="aiw-panel-inner">
+      <div class="aiw-field-label">Baat karne ka andaz</div>
+      <select id="aiwToneSelect" class="aiw-select">
+        <option value="friendly">😊 Friendly</option>
+        <option value="formal">🎩 Formal</option>
+        <option value="funny">😂 Funny</option>
+      </select>
+      <hr class="aiw-hr"/>
+      <div class="aiw-field-label">Backup (recommended!)</div>
+      <button id="aiwExportBtn" class="aiw-btn">⬇️ Training Data Export Karo</button>
+      <label class="aiw-btn aiw-filelabel">⬆️ Training Data Import Karo
+        <input type="file" id="aiwImportInput" accept="application/json" style="display:none;"/>
+      </label>
+      <hr class="aiw-hr"/>
+      <div class="aiw-field-label">Admin Security</div>
+      <button id="aiwLockNowBtn" class="aiw-btn">🔒 Abhi Lock Karo</button>
+      <button id="aiwChangePassBtn" class="aiw-btn">🔑 Password Badlo</button>
+      <hr class="aiw-hr"/>
+      <button id="aiwResetBtn" class="aiw-btn aiw-btn-danger">🗑️ Sab Reset Karo</button>
+    </div>
+  </div>
+
+  <div id="aiwLockTab" class="aiw-tabpanel" style="display:none;">
+    <div class="aiw-panel-inner" style="text-align:center;padding-top:26px;">
+      <div style="font-size:32px;margin-bottom:8px;">🔒</div>
+      <div id="aiwLockTitle" style="font-weight:700;color:#2b4d38;margin-bottom:4px;font-size:14px;">Admin Access</div>
+      <div id="aiwLockSubtitle" style="font-size:11.5px;color:#887;margin-bottom:14px;">Ye section sirf admin ke liye hai</div>
+      <input type="password" id="aiwLockPass" class="aiw-input" placeholder="Password daalo"/>
+      <input type="password" id="aiwLockPass2" class="aiw-input" placeholder="Password confirm karo" style="display:none;"/>
+      <button id="aiwLockBtn" class="aiw-btn aiw-btn-amber">Unlock</button>
+      <div id="aiwLockError" style="color:#c0503a;font-size:11.5px;margin-top:6px;min-height:14px;"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/knn-classifier"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════════
+//  BASE KNOWLEDGE — ships with the widget, works fully offline
+// ═══════════════════════════════════════════════════════════════════
+var BASE_KB=[
+  {p:['hi','hello','hey','helo','hii','hy','namaste','namaskar'], r:['Hello! 👋 Kaise madad karu?','Hi! Kya poochna hai aapko?']},
+  {p:['how are you','kaise ho','kaisi ho','kya haal'], r:['Main bilkul theek hoon! Aap batao 😊']},
+  {p:['who are you','tum kaun ho','aap kaun ho','what are you'], r:['Main Sahil AI hoon 🌱 is website ka apna assistant!']},
+  {p:['what can you do','tum kya kar sakte ho','aap kya kar sakte ho'], r:['Main aapse baat kar sakta hoon, aur agar mujhe sikhaya jaye toh images bhi pehchan sakta hoon!']},
+  {p:['bye','goodbye','alvida','tata','phir milenge'], r:['Bye! Phir milte hain 👋']},
+  {p:['thank you','thanks','shukriya','dhanyavad'], r:['Koi baat nahi! Khushi hui madad karke 😊']},
+  {p:['name','naam'], r:['Main Sahil AI hoon 🌱']}
+];
+var LS_INFO='sahilai_info_v1';
+var LS_TONE='sahilai_tone_v1';
+var LS_ADMIN_HASH='sahilai_admin_hash';
+var ADMIN_TRIGGER='sahil1094';
+var ADMIN_PASS_RESET_TRIGGER='sahil1094pass';
+
+// ═══════════════════════════════════════════════════════════════════
+//  INDEXEDDB — stores trained images on this device
+// ═══════════════════════════════════════════════════════════════════
+var DB_NAME='SahilAI_DB', DB_VERSION=1, STORE='images';
+function openDB(){
+  return new Promise(function(resolve,reject){
+    var req=indexedDB.open(DB_NAME,DB_VERSION);
+    req.onupgradeneeded=function(e){
+      var db=e.target.result;
+      if(!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE,{keyPath:'id',autoIncrement:true});
+    };
+    req.onsuccess=function(e){resolve(e.target.result);};
+    req.onerror=function(e){reject(e);};
+  });
+}
+function dbAddImage(label,dataURL){
+  return openDB().then(function(db){
+    return new Promise(function(resolve,reject){
+      var tx=db.transaction(STORE,'readwrite');
+      var req=tx.objectStore(STORE).add({label:label,dataURL:dataURL,ts:Date.now()});
+      req.onsuccess=function(){resolve(req.result);};
+      req.onerror=function(e){reject(e);};
+    });
+  });
+}
+function dbGetAllImages(){
+  return openDB().then(function(db){
+    return new Promise(function(resolve,reject){
+      var tx=db.transaction(STORE,'readonly');
+      var req=tx.objectStore(STORE).getAll();
+      req.onsuccess=function(){resolve(req.result);};
+      req.onerror=function(e){reject(e);};
+    });
+  });
+}
+function dbDeleteImage(id){
+  return openDB().then(function(db){
+    return new Promise(function(resolve,reject){
+      var tx=db.transaction(STORE,'readwrite');
+      var req=tx.objectStore(STORE).delete(id);
+      req.onsuccess=function(){resolve();};
+      req.onerror=function(e){reject(e);};
+    });
+  });
+}
+function dbClearAll(){
+  return openDB().then(function(db){
+    return new Promise(function(resolve,reject){
+      var tx=db.transaction(STORE,'readwrite');
+      var req=tx.objectStore(STORE).clear();
+      req.onsuccess=function(){resolve();};
+      req.onerror=function(e){reject(e);};
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  IMAGE AI — real transfer-learning training (MobileNet + KNN)
+// ═══════════════════════════════════════════════════════════════════
+var mobilenetModel=null, classifier=null, modelsReady=false, webcamStream=null;
+async function initImageModels(){
+  try{
+    classifier=knnClassifier.create();
+    mobilenetModel=await mobilenet.load();
+    var imgs=await dbGetAllImages();
+    for(var i=0;i<imgs.length;i++){ await addImageToClassifier(imgs[i].dataURL, imgs[i].label); }
+    modelsReady=true;
+    renderClassList();
+  }catch(err){
+    var panel=document.getElementById('aiwTeachImageTab').querySelector('.aiw-panel-inner');
+    if(panel) panel.innerHTML='<div class="aiw-empty">⚠️ Image AI load nahi ho paya — pehli baar internet chahiye hota hai. Connect karke page reload karo.</div>';
+  }
+}
+function loadImageElement(dataURL){
+  return new Promise(function(resolve,reject){
+    var img=new Image(); img.onload=function(){resolve(img);}; img.onerror=reject; img.src=dataURL;
+  });
+}
+async function addImageToClassifier(dataURL,label){
+  var imgEl=await loadImageElement(dataURL);
+  var act=mobilenetModel.infer(imgEl,true);
+  classifier.addExample(act,label);
+}
+async function predictImage(dataURL){
+  if(!modelsReady) return null;
+  var imgEl=await loadImageElement(dataURL);
+  var act=mobilenetModel.infer(imgEl,true);
+  if(classifier.getNumClasses()===0) return null;
+  return await classifier.predictClass(act);
+}
+async function rebuildClassifier(){
+  if(!modelsReady||!classifier) return;
+  classifier.clearAllClasses();
+  var imgs=await dbGetAllImages();
+  for(var i=0;i<imgs.length;i++){ await addImageToClassifier(imgs[i].dataURL, imgs[i].label); }
+}
+function stopCamera(){
+  if(webcamStream){
+    webcamStream.getTracks().forEach(function(t){t.stop();});
+    webcamStream=null;
+    var v=document.getElementById('aiwWebcam');
+    v.style.display='none'; v.srcObject=null;
+    document.getElementById('aiwStartCam').style.display='flex';
+    document.getElementById('aiwCaptureBtn').style.display='none';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  SEMANTIC TEXT AI — Universal Sentence Encoder QnA (real ML, no API)
+//  Understands paraphrased questions, not just exact keyword matches
+// ═══════════════════════════════════════════════════════════════════
+var qnaModel=null, qnaReady=false;
+async function initQnaModel(){
+  try{
+    qnaModel=await use.loadQnA();
+    qnaReady=true;
+  }catch(err){ qnaReady=false; }
+}
+function dotProduct(a,b){ var s=0; for(var i=0;i<a.length;i++) s+=a[i]*b[i]; return s; }
+async function embedResponses(texts){
+  var out=qnaModel.embed({queries:['placeholder'],responses:texts});
+  var arr=out.responseEmbedding.arraySync();
+  out.queryEmbedding.dispose(); out.responseEmbedding.dispose();
+  return arr;
+}
+async function embedQuery(text){
+  var out=qnaModel.embed({queries:[text],responses:['placeholder']});
+  var arr=out.queryEmbedding.arraySync()[0];
+  out.queryEmbedding.dispose(); out.responseEmbedding.dispose();
+  return arr;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  INFO STORAGE (single free-form box, split into lines/chunks)
+// ═══════════════════════════════════════════════════════════════════
+function getInfoChunks(){ try{ return JSON.parse(localStorage.getItem(LS_INFO)||'[]'); }catch(e){ return []; } }
+function saveInfoChunks(arr){ localStorage.setItem(LS_INFO, JSON.stringify(arr)); }
+
+async function addInfo(rawText){
+  var lines=rawText.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+  if(lines.length===0) return;
+  var chunks=getInfoChunks();
+  var embeds=null;
+  if(qnaReady){
+    try{ embeds=await embedResponses(lines); }catch(e){ embeds=null; }
+  }
+  lines.forEach(function(line,i){
+    chunks.push({text:line, embedding: embeds?embeds[i]:null});
+  });
+  saveInfoChunks(chunks);
+}
+
+function normalize(s){ return s.toLowerCase().replace(/[^\w\s]/g,'').trim(); }
+function scoreMatch(iw,pw){ var m=0; pw.forEach(function(w){ if(iw.indexOf(w)>=0) m++; }); return m/Math.max(pw.length,1); }
+function applyTone(text){
+  var tone=localStorage.getItem(LS_TONE)||'friendly';
+  if(tone==='formal') return text.replace(/😊|👋|🌱|😂/g,'').trim();
+  if(tone==='funny') return text+' 😂';
+  return text;
+}
+
+async function findResponse(userText){
+  var norm=normalize(userText);
+  if(!norm) return {text:applyTone('Kuch toh likho! 😅'),taught:false};
+  var words=norm.split(/\s+/).filter(Boolean);
+  var chunks=getInfoChunks();
+
+  // 1. Exact / substring match — fastest, highest confidence
+  var exactMatch=null, exactLen=0;
+  chunks.forEach(function(c){
+    var cn=normalize(c.text);
+    if(cn && (norm.indexOf(cn)>=0 || cn.indexOf(norm)>=0) && cn.length>exactLen){
+      exactMatch=c.text; exactLen=cn.length;
+    }
+  });
+  if(exactMatch) return {text:applyTone(exactMatch),taught:true};
+
+  // 2. Semantic search — understands paraphrased / differently-worded questions
+  if(qnaReady && chunks.length>0){
+    try{
+      var qEmb=await embedQuery(userText);
+      var best=null, bestScore=-Infinity;
+      chunks.forEach(function(c){
+        if(!c.embedding) return;
+        var score=dotProduct(qEmb,c.embedding);
+        if(score>bestScore){ bestScore=score; best=c.text; }
+      });
+      if(best && bestScore>0.12) return {text:applyTone(best),taught:true};
+    }catch(e){ /* fall through */ }
+  }
+
+  // 3. Keyword overlap — safety net for offline or low-confidence cases
+  var kwBest=null, kwScore=0;
+  chunks.forEach(function(c){
+    var cw=normalize(c.text).split(/\s+/).filter(Boolean);
+    if(cw.length===0) return;
+    var sc=scoreMatch(words,cw);
+    if(sc>kwScore && sc>=0.4){ kwScore=sc; kwBest=c.text; }
+  });
+  if(kwBest) return {text:applyTone(kwBest),taught:true};
+
+  // 4. Base knowledge
+  for(var i=0;i<BASE_KB.length;i++){
+    var kb=BASE_KB[i];
+    for(var j=0;j<kb.p.length;j++){
+      var pn=normalize(kb.p[j]);
+      if(pn && norm.indexOf(pn)>=0) return {text:applyTone(kb.r[Math.floor(Math.random()*kb.r.length)]),taught:false};
+    }
+  }
+  return {text:applyTone("Ye mujhe nahi pata 🤔"),taught:false};
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  CHAT UI
+// ═══════════════════════════════════════════════════════════════════
+function addMessage(text,sender,taught){
+  var msgs=document.getElementById('aiwMessages');
+  var div=document.createElement('div'); div.className='aiw-msg aiw-msg-'+sender;
+  var span=document.createElement('span'); span.textContent=text; div.appendChild(span);
+  if(taught){ var tag=document.createElement('span'); tag.className='aiw-taughttag'; tag.textContent=' 🌱'; tag.title='Ye maine seekha tha!'; div.appendChild(tag); }
+  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight;
+}
+async function sendMessage(){
+  var input=document.getElementById('aiwInput');
+  var text=input.value.trim();
+  if(!text) return;
+  var lower=text.toLowerCase();
+
+  // Hidden admin triggers — never shown as chat messages
+  if(lower===ADMIN_PASS_RESET_TRIGGER){
+    input.value='';
+    localStorage.removeItem(LS_ADMIN_HASH);
+    sessionStorage.removeItem('sahilai_unlocked');
+    revealAdminTabs();
+    return;
+  }
+  if(lower===ADMIN_TRIGGER){
+    input.value='';
+    revealAdminTabs();
+    return;
+  }
+
+  addMessage(text,'user',false); input.value='';
+  document.getElementById('aiwChips').style.display='none';
+  var res=await findResponse(text);
+  setTimeout(function(){ addMessage(res.text,'ai',res.taught); },300+Math.random()*250);
+}
+var CHIPS=['Hi! 👋','Tum kya kar sakte ho?'];
+function renderChips(){
+  var wrap=document.getElementById('aiwChips'); wrap.innerHTML='';
+  CHIPS.forEach(function(c){
+    var chip=document.createElement('button'); chip.className='aiw-chip'; chip.textContent=c;
+    chip.onclick=function(){ document.getElementById('aiwInput').value=c; sendMessage(); };
+    wrap.appendChild(chip);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  TEACH TEXT UI (single box)
+// ═══════════════════════════════════════════════════════════════════
+function renderQaList(){
+  var list=getInfoChunks();
+  var el=document.getElementById('aiwQaList'); el.innerHTML='';
+  if(list.length===0){ el.innerHTML='<div class="aiw-empty">Abhi kuch nahi sikhaya gaya. Upar se shuru karo!</div>'; return; }
+  list.forEach(function(item,idx){
+    var row=document.createElement('div'); row.className='aiw-qarow';
+    var txt=document.createElement('div'); txt.className='aiw-qaresponse'; txt.textContent=item.text; txt.style.color='#2b4d38'; txt.style.fontWeight='600';
+    var del=document.createElement('button'); del.className='aiw-qadel'; del.textContent='×';
+    del.onclick=function(){ var arr=getInfoChunks(); arr.splice(idx,1); saveInfoChunks(arr); renderQaList(); updateBadge(); };
+    row.appendChild(txt); row.appendChild(del);
+    el.appendChild(row);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  TEACH IMAGE UI
+// ═══════════════════════════════════════════════════════════════════
+var currentCaptureDataURL=null;
+async function renderClassList(){
+  var el=document.getElementById('aiwClassList'); if(!el) return;
+  var imgs=await dbGetAllImages();
+  var counts={};
+  imgs.forEach(function(im){ counts[im.label]=(counts[im.label]||0)+1; });
+  el.innerHTML='';
+  var labels=Object.keys(counts);
+  if(labels.length===0){ el.innerHTML='<div class="aiw-empty">Koi image class train nahi hua abhi.</div>'; return; }
+  labels.forEach(function(lb){
+    var row=document.createElement('div'); row.className='aiw-classrow';
+    var name=document.createElement('span'); name.textContent='🏷️ '+lb+' ('+counts[lb]+')';
+    var del=document.createElement('button'); del.className='aiw-qadel'; del.textContent='×';
+    del.onclick=async function(){
+      var all=await dbGetAllImages();
+      var toDel=all.filter(function(im){return im.label===lb;});
+      for(var i=0;i<toDel.length;i++){ await dbDeleteImage(toDel[i].id); }
+      await rebuildClassifier();
+      renderClassList(); updateBadge();
+    };
+    row.appendChild(name); row.appendChild(del);
+    el.appendChild(row);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  BADGE
+// ═══════════════════════════════════════════════════════════════════
+async function updateBadge(){
+  var infoCount=getInfoChunks().length;
+  var imgs=await dbGetAllImages();
+  var labelSet={}; imgs.forEach(function(im){labelSet[im.label]=true;});
+  var total=infoCount+Object.keys(labelSet).length;
+  var badge=document.getElementById('aiwBadge');
+  if(total>0){ badge.textContent=total; badge.style.display='flex'; } else { badge.style.display='none'; }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  ADMIN PASSWORD GATE (local, no server/API needed)
+// ═══════════════════════════════════════════════════════════════════
+var GATED_TABS=['teachText','teachImage','settings'];
+var pendingTab=null;
+async function sha256(text){
+  var enc=new TextEncoder().encode(text);
+  var buf=await crypto.subtle.digest('SHA-256',enc);
+  var arr=Array.from(new Uint8Array(buf));
+  return arr.map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+}
+function isUnlocked(){ return sessionStorage.getItem('sahilai_unlocked')==='true'; }
+function hasAdminPassword(){ return !!localStorage.getItem(LS_ADMIN_HASH); }
+function showRealTab(tab){
+  var panelId='aiw'+tab.charAt(0).toUpperCase()+tab.slice(1)+'Tab';
+  var panels=document.querySelectorAll('.aiw-tabpanel');
+  for(var k=0;k<panels.length;k++) panels[k].style.display='none';
+  document.getElementById(panelId).style.display='flex';
+}
+function showLockScreen(tab){
+  pendingTab=tab;
+  var panels=document.querySelectorAll('.aiw-tabpanel');
+  for(var k=0;k<panels.length;k++) panels[k].style.display='none';
+  document.getElementById('aiwLockTab').style.display='flex';
+  document.getElementById('aiwLockPass').value='';
+  document.getElementById('aiwLockPass2').value='';
+  document.getElementById('aiwLockError').textContent='';
+  if(hasAdminPassword()){
+    document.getElementById('aiwLockTitle').textContent='Admin Access';
+    document.getElementById('aiwLockSubtitle').textContent='Ye section sirf admin ke liye hai';
+    document.getElementById('aiwLockPass').placeholder='Password daalo';
+    document.getElementById('aiwLockPass2').style.display='none';
+    document.getElementById('aiwLockBtn').textContent='Unlock';
+  } else {
+    document.getElementById('aiwLockTitle').textContent='Admin Password Set Karo';
+    document.getElementById('aiwLockSubtitle').textContent='Pehli baar hai — apna password banao';
+    document.getElementById('aiwLockPass').placeholder='Naya password';
+    document.getElementById('aiwLockPass2').style.display='block';
+    document.getElementById('aiwLockBtn').textContent='Set Password';
+  }
+}
+function revealAdminTabs(){
+  document.getElementById('aiwTabs').style.display='flex';
+  var tabBtns=document.querySelectorAll('.aiw-tabbtn');
+  for(var j=0;j<tabBtns.length;j++) tabBtns[j].classList.remove('active');
+  var teachBtn=document.querySelector('[data-tab="teachText"]');
+  if(teachBtn) teachBtn.classList.add('active');
+  if(!isUnlocked()){ showLockScreen('teachText'); }
+  else { showRealTab('teachText'); }
+}
+function hideAdminTabsUI(){
+  document.getElementById('aiwTabs').style.display='none';
+  var tabBtns=document.querySelectorAll('.aiw-tabbtn');
+  for(var j=0;j<tabBtns.length;j++) tabBtns[j].classList.remove('active');
+  var chatBtn=document.querySelector('[data-tab="chat"]');
+  if(chatBtn) chatBtn.classList.add('active');
+  showRealTab('chat');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  EVENT WIRING
+// ═══════════════════════════════════════════════════════════════════
+document.getElementById('aiwBubble').onclick=function(){
+  var win=document.getElementById('aiwWindow');
+  win.style.display=win.style.display==='flex'?'none':'flex';
+};
+document.getElementById('aiwClose').onclick=function(){
+  document.getElementById('aiwWindow').style.display='none';
+  stopCamera();
+  hideAdminTabsUI();
+};
+document.getElementById('aiwSend').onclick=sendMessage;
+document.getElementById('aiwInput').addEventListener('keypress',function(e){ if(e.key==='Enter') sendMessage(); });
+
+var tabBtns=document.querySelectorAll('.aiw-tabbtn');
+for(var ti=0;ti<tabBtns.length;ti++){
+  tabBtns[ti].onclick=function(){
+    for(var j=0;j<tabBtns.length;j++) tabBtns[j].classList.remove('active');
+    this.classList.add('active');
+    var tab=this.getAttribute('data-tab');
+    if(tab!=='teachImage') stopCamera();
+    if(GATED_TABS.indexOf(tab)>=0 && !isUnlocked()){ showLockScreen(tab); }
+    else { showRealTab(tab); }
+  };
+}
+
+document.getElementById('aiwLockBtn').onclick=async function(){
+  var pass=document.getElementById('aiwLockPass').value;
+  var errorEl=document.getElementById('aiwLockError');
+  if(!pass){ errorEl.textContent='Password likho!'; return; }
+  if(!hasAdminPassword()){
+    var pass2=document.getElementById('aiwLockPass2').value;
+    if(pass.length<4){ errorEl.textContent='Kam se kam 4 characters ka password rakho.'; return; }
+    if(pass!==pass2){ errorEl.textContent='Dono password match nahi ho rahe!'; return; }
+    var hash=await sha256(pass);
+    localStorage.setItem(LS_ADMIN_HASH,hash);
+    sessionStorage.setItem('sahilai_unlocked','true');
+    showRealTab(pendingTab);
+  } else {
+    var hash2=await sha256(pass);
+    if(hash2===localStorage.getItem(LS_ADMIN_HASH)){
+      sessionStorage.setItem('sahilai_unlocked','true');
+      showRealTab(pendingTab);
+    } else { errorEl.textContent='Galat password!'; }
+  }
+};
+document.getElementById('aiwLockPass').addEventListener('keypress',function(e){ if(e.key==='Enter') document.getElementById('aiwLockBtn').click(); });
+document.getElementById('aiwLockPass2').addEventListener('keypress',function(e){ if(e.key==='Enter') document.getElementById('aiwLockBtn').click(); });
+
+document.getElementById('aiwLockNowBtn').onclick=function(){
+  sessionStorage.removeItem('sahilai_unlocked');
+  hideAdminTabsUI();
+};
+document.getElementById('aiwChangePassBtn').onclick=function(){
+  if(!confirm('Purana password reset ho jayega, turant naya set karna hoga. Theek hai?')) return;
+  localStorage.removeItem(LS_ADMIN_HASH);
+  sessionStorage.removeItem('sahilai_unlocked');
+  showLockScreen('teachText');
+  var tabBtns2=document.querySelectorAll('.aiw-tabbtn');
+  for(var j=0;j<tabBtns2.length;j++) tabBtns2[j].classList.remove('active');
+  var teachBtn=document.querySelector('[data-tab="teachText"]');
+  if(teachBtn) teachBtn.classList.add('active');
+};
+
+document.getElementById('aiwAddInfo').onclick=async function(){
+  var raw=document.getElementById('aiwInfoInput').value;
+  if(!raw.trim()){ alert('Kuch likho pehle!'); return; }
+  await addInfo(raw);
+  document.getElementById('aiwInfoInput').value='';
+  renderQaList(); updateBadge();
+};
+
+document.getElementById('aiwImgUpload').addEventListener('change',function(e){
+  var file=e.target.files[0]; if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    currentCaptureDataURL=ev.target.result;
+    document.getElementById('aiwPreview').src=currentCaptureDataURL;
+    document.getElementById('aiwPreview').style.display='inline-block';
+    document.getElementById('aiwPreviewWrap').style.display='block';
+  };
+  reader.readAsDataURL(file);
+});
+document.getElementById('aiwStartCam').onclick=function(){
+  navigator.mediaDevices.getUserMedia({video:true}).then(function(stream){
+    webcamStream=stream;
+    var video=document.getElementById('aiwWebcam');
+    video.srcObject=stream; video.style.display='block';
+    document.getElementById('aiwCaptureBtn').style.display='flex';
+    document.getElementById('aiwStartCam').style.display='none';
+  }).catch(function(err){ alert('Camera access nahi mila: '+err.message); });
+};
+document.getElementById('aiwCaptureBtn').onclick=function(){
+  var video=document.getElementById('aiwWebcam');
+  var cv=document.createElement('canvas'); cv.width=224; cv.height=224;
+  cv.getContext('2d').drawImage(video,0,0,224,224);
+  currentCaptureDataURL=cv.toDataURL('image/jpeg',0.85);
+  document.getElementById('aiwPreview').src=currentCaptureDataURL;
+  document.getElementById('aiwPreview').style.display='inline-block';
+  document.getElementById('aiwPreviewWrap').style.display='block';
+};
+document.getElementById('aiwAddImageBtn').onclick=async function(){
+  var label=document.getElementById('aiwLabelInput').value.trim();
+  if(!label){ alert('Label likho pehle!'); return; }
+  if(!currentCaptureDataURL){ alert('Pehle image lo ya upload karo!'); return; }
+  if(!modelsReady){ alert('AI model abhi load ho raha hai, thoda wait karo...'); return; }
+  try{
+    await addImageToClassifier(currentCaptureDataURL,label);
+    await dbAddImage(label,currentCaptureDataURL);
+    renderClassList(); updateBadge();
+    document.getElementById('aiwPreviewWrap').style.display='none';
+    document.getElementById('aiwLabelInput').value='';
+    currentCaptureDataURL=null;
+  }catch(err){ alert('Kuch galat ho gaya: '+err.message); }
+};
+document.getElementById('aiwTestImgUpload').addEventListener('change',function(e){
+  var file=e.target.files[0]; if(!file) return;
+  var reader=new FileReader();
+  reader.onload=async function(ev){
+    var dataURL=ev.target.result;
+    var prev=document.getElementById('aiwTestPreview');
+    prev.src=dataURL; prev.style.display='inline-block';
+    var resultEl=document.getElementById('aiwPredictionResult');
+    if(!modelsReady){ resultEl.textContent='Model load ho raha hai, thoda wait karo...'; return; }
+    var result=await predictImage(dataURL);
+    if(result && result.label){
+      var conf=(result.confidences[result.label]*100).toFixed(0);
+      resultEl.textContent='🎯 Ye lagta hai: '+result.label+' ('+conf+'% sure)';
+    } else { resultEl.textContent='Pehle kuch sikhao, phir main pehchan sakunga!'; }
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('aiwToneSelect').onchange=function(e){ localStorage.setItem(LS_TONE,e.target.value); };
+
+document.getElementById('aiwResetBtn').onclick=async function(){
+  if(!confirm('Sara training data delete ho jayega. Pakka?')) return;
+  localStorage.removeItem(LS_INFO);
+  await dbClearAll();
+  if(classifier) classifier.clearAllClasses();
+  renderQaList(); renderClassList(); updateBadge();
+  alert('Reset ho gaya!');
+};
+document.getElementById('aiwExportBtn').onclick=async function(){
+  var info=getInfoChunks();
+  var imgs=await dbGetAllImages();
+  var data={info:info,images:imgs,tone:localStorage.getItem(LS_TONE)||'friendly'};
+  var blob=new Blob([JSON.stringify(data)],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a'); a.href=url; a.download='sahil-ai-training.json'; a.click();
+  URL.revokeObjectURL(url);
+};
+document.getElementById('aiwImportInput').addEventListener('change',function(e){
+  var file=e.target.files[0]; if(!file) return;
+  var reader=new FileReader();
+  reader.onload=async function(ev){
+    try{
+      var data=JSON.parse(ev.target.result);
+      if(data.info) saveInfoChunks(data.info);
+      if(data.tone) localStorage.setItem(LS_TONE,data.tone);
+      if(data.images && data.images.length){
+        for(var i=0;i<data.images.length;i++){ await dbAddImage(data.images[i].label,data.images[i].dataURL); }
+        await rebuildClassifier();
+      }
+      renderQaList(); renderClassList(); updateBadge();
+      alert('Import ho gaya!');
+    }catch(err){ alert('File sahi format mein nahi hai.'); }
+  };
+  reader.readAsText(file);
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════════
+renderQaList();
+renderChips();
+updateBadge();
+document.getElementById('aiwToneSelect').value=localStorage.getItem(LS_TONE)||'friendly';
+addMessage('Hi! Main Sahil AI hoon 🌱 Kuch bhi poocho!','ai',false);
+initImageModels();
+initQnaModel();
+</script>
+</body>
+</html>
